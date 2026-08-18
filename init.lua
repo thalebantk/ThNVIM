@@ -11,6 +11,14 @@
 
 vim.cmd("filetype plugin indent on")
 
+-- .asm is NASM by convention (bootloaders, DOS-era sources); Neovim's default
+-- maps it to "asm", which is the GAS/AT&T syntax and mis-colours Intel operand
+-- order and directives like BITS/ORG. .s and .S stay "asm" -- those really are
+-- GAS, and that is what the kernel uses.
+vim.filetype.add({
+	extension = { asm = "nasm" },
+})
+
 -- Remote plugin providers, none of which this config uses. Left enabled they
 -- each cost a startup probe and report a :checkhealth warning for a missing
 -- interpreter package. Re-enable one if a plugin ever needs it.

@@ -118,14 +118,14 @@ detect_pm() {
 # back to an upstream build when the distro ships an old version.
 pkgs_for() {
 	case "$1" in
-		dnf)      echo "git curl unzip tar gzip gcc make cmake ripgrep fd-find python3-pip nodejs npm wl-clipboard xclip clang clang-tools-extra tmux" ;;
-		apt-get)  echo "git curl unzip tar gzip build-essential cmake ripgrep fd-find python3-pip python3-venv nodejs npm wl-clipboard xclip clang clangd tmux" ;;
-		pacman)   echo "git curl unzip tar gzip base-devel cmake ripgrep fd python-pip nodejs npm wl-clipboard xclip clang tmux" ;;
-		zypper)   echo "git curl unzip tar gzip gcc make cmake ripgrep fd python3-pip nodejs npm wl-clipboard xclip clang clang-tools tmux" ;;
-		apk)      echo "git curl unzip tar gzip build-base cmake ripgrep fd py3-pip nodejs npm xclip clang clang-extra-tools tmux" ;;
-		xbps-install) echo "git curl unzip tar gzip base-devel cmake ripgrep fd python3-pip nodejs npm wl-clipboard xclip clang clang-tools-extra tmux" ;;
-		eopkg)    echo "git curl unzip tar gzip gcc make cmake ripgrep fd python3-pip nodejs npm xclip llvm-clang tmux" ;;
-		brew)     echo "git curl unzip cmake ripgrep fd node llvm tmux" ;;
+		dnf)      echo "git curl unzip tar gzip gcc make cmake ripgrep fd-find python3-pip nodejs npm wl-clipboard xclip clang clang-tools-extra tmux nasm" ;;
+		apt-get)  echo "git curl unzip tar gzip build-essential cmake ripgrep fd-find python3-pip python3-venv nodejs npm wl-clipboard xclip clang clangd tmux nasm" ;;
+		pacman)   echo "git curl unzip tar gzip base-devel cmake ripgrep fd python-pip nodejs npm wl-clipboard xclip clang tmux nasm" ;;
+		zypper)   echo "git curl unzip tar gzip gcc make cmake ripgrep fd python3-pip nodejs npm wl-clipboard xclip clang clang-tools tmux nasm" ;;
+		apk)      echo "git curl unzip tar gzip build-base cmake ripgrep fd py3-pip nodejs npm xclip clang clang-extra-tools tmux nasm" ;;
+		xbps-install) echo "git curl unzip tar gzip base-devel cmake ripgrep fd python3-pip nodejs npm wl-clipboard xclip clang clang-tools-extra tmux nasm" ;;
+		eopkg)    echo "git curl unzip tar gzip gcc make cmake ripgrep fd python3-pip nodejs npm xclip llvm-clang tmux nasm" ;;
+		brew)     echo "git curl unzip cmake ripgrep fd node llvm tmux nasm" ;;
 	esac
 }
 
