@@ -27,6 +27,7 @@ o.wrap = false
 o.commentstring = "; %s"
 o.comments = ":;"
 
+-- Same whitespace marks as the C and GAS configs.
 o.list = true
 o.listchars = { tab = "  ", trail = "·", nbsp = "␣" }
 

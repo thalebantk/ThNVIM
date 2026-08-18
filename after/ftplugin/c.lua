@@ -34,7 +34,9 @@ o.wrap = false
 o.commentstring = "/* %s */"
 
 -- Trailing whitespace is a patch-check failure, so make it visible.
--- Tabs render as plain blanks; only the violations are marked.
+-- Tabs render as plain blanks; only the violations are marked. The indent
+-- guides are indent-blankline's job (lua/plugins/indent.lua) -- a bar here
+-- would draw a second one underneath it.
 o.list = true
 o.listchars = { tab = "  ", trail = "·", nbsp = "␣" }
 

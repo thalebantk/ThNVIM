@@ -37,7 +37,8 @@ o.commentstring = "/* %s */"
 -- behave. Kept in this order so /* */ wins for new comments.
 o.comments = "s1:/*,mb:*,ex:*/,://,:#"
 
--- Trailing whitespace fails checkpatch here too.
+-- Trailing whitespace fails checkpatch here too. Tabs stay plain blanks; the
+-- guides come from indent-blankline, as in after/ftplugin/c.lua.
 o.list = true
 o.listchars = { tab = "  ", trail = "·", nbsp = "␣" }
 
