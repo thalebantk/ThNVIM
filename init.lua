@@ -19,6 +19,19 @@ vim.filetype.add({
 	extension = { asm = "nasm" },
 })
 
+-- Treesitter looks a parser up by language name, and the name defaults to the
+-- filetype. There is no grammar called "typescriptreact" -- the TSX one is
+-- "tsx" -- so vim.treesitter.get_parser() returns nil on every .tsx buffer
+-- rather than erroring, and everything built on it silently does nothing. That
+-- is what left indent-blankline's scope highlighting alive in C and dead in
+-- Next.js pages. JSX is handled by the plain javascript grammar and needs the
+-- same declaration.
+--
+-- nvim-treesitter would register these; this config does not use it, so they
+-- are stated here. They are inert without the matching parsers installed.
+vim.treesitter.language.register("tsx", "typescriptreact")
+vim.treesitter.language.register("javascript", "javascriptreact")
+
 -- Remote plugin providers, none of which this config uses. Left enabled they
 -- each cost a startup probe and report a :checkhealth warning for a missing
 -- interpreter package. Re-enable one if a plugin ever needs it.
@@ -58,18 +71,30 @@ vim.o.cursorlineopt = "number"
 -- This keeps whatever colours the active scheme defines for MatchParen and
 -- only adds emphasis on top, so it layers over moonfly rather than replacing
 -- it. Re-applied on ColorScheme because loading a scheme resets highlights.
-local function emphasise_matchparen()
-	local hl = vim.api.nvim_get_hl(0, { name = "MatchParen", link = false })
-	hl.bold = true
-	hl.underline = true
-	vim.api.nvim_set_hl(0, "MatchParen", hl)
+local function emphasise_matches()
+	local paren = vim.api.nvim_get_hl(0, { name = "MatchParen", link = false })
+	paren.bold = true
+	paren.underline = true
+	vim.api.nvim_set_hl(0, "MatchParen", paren)
+
+	-- matchup highlights matched *words* with MatchWord rather than
+	-- MatchParen: if/endif, do/done, and the <div>...</div> tag pairs a
+	-- Next.js page is mostly made of. moonfly leaves that group a coral
+	-- foreground with no background at all, which is easy to lose on a .tsx
+	-- line already full of colour, so give it the background MatchParen
+	-- carries and keep the coral on top of it.
+	local word = vim.api.nvim_get_hl(0, { name = "MatchWord", link = false })
+	word.bg = paren.bg
+	word.bold = true
+	word.underline = true
+	vim.api.nvim_set_hl(0, "MatchWord", word)
 end
 
 vim.api.nvim_create_autocmd("ColorScheme", {
-	group = vim.api.nvim_create_augroup("ThNVIMMatchParen", { clear = true }),
-	callback = emphasise_matchparen,
+	group = vim.api.nvim_create_augroup("ThNVIMMatchHighlight", { clear = true }),
+	callback = emphasise_matches,
 })
-emphasise_matchparen()
+emphasise_matches()
 
 -- ------------------------------------------------------------- plugins ----
 
@@ -97,7 +122,7 @@ require("lazy").setup({
 
 -- Settings for each server live in lsp/<server>.lua and are resolved by
 -- Neovim's native LSP loader when a matching filetype is opened.
-vim.lsp.enable({ "clangd", "asm_lsp", "pyright" })
+vim.lsp.enable({ "clangd", "asm_lsp", "pyright", "ts_ls", "tailwindcss" })
 
 -- Diagnostics stay as they are -- sign column letter plus underline, no inline
 -- text. The message is shown on demand instead, by <leader>e.

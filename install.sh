@@ -12,8 +12,9 @@
 #   -l, --link       symlink the repo into place (default)
 #   -c, --copy       copy the repo instead of symlinking
 #   -n, --no-deps    skip package installation, only deploy the config
-#   -L, --no-lsp     skip the language servers fetched outside the package
-#                    manager (asm-lsp, pyright)
+#   -L, --no-lsp     skip the tooling fetched outside the package manager
+#                    (asm-lsp, pyright, typescript-language-server,
+#                    tailwindcss-language-server, prettier)
 #   -e, --no-extras  skip the tmux and Konsole config, Neovim only
 #   -f, --force      replace an existing config without prompting (a backup is
 #                    still taken)
@@ -282,6 +283,48 @@ install_pyright() {
 	export PATH="$prefix/bin:$PATH"
 }
 
+# ----------------------------------------------------------- typescript -----
+
+# TypeScript/JavaScript and Tailwind language servers plus Prettier, for the
+# Next.js side.
+# npm-only like pyright, so both go into ~/.local rather than npm's default
+# /usr/local prefix, which would need root.
+#
+# typescript is installed alongside the server deliberately: tsserver is a
+# library shipped by that package, and typescript-language-server drives it
+# instead of bundling its own, so the server alone cannot start.
+install_web_tools() {
+	if ! have npm; then
+		warn "npm not available; TypeScript LSP and Prettier disabled"
+		return
+	fi
+
+	local prefix="$HOME/.local" want=""
+	have typescript-language-server || want="$want typescript-language-server typescript"
+	have prettier || want="$want prettier"
+	have tailwindcss-language-server || want="$want @tailwindcss/language-server"
+
+	if [ -z "$want" ]; then
+		ok "TypeScript, Tailwind and Prettier tooling already installed"
+		return
+	fi
+
+	info "installing$want with npm into $prefix"
+	# shellcheck disable=SC2086  # word splitting of the package list is intended
+	if ! npm install -g --prefix "$prefix" $want >/dev/null 2>&1; then
+		warn "npm install failed; TypeScript LSP or Prettier may be missing"
+		return
+	fi
+	ok "installed$want to $prefix/bin"
+
+	case ":$PATH:" in
+		*":$prefix/bin:"*) ;;
+		*) warn "$prefix/bin is not on your PATH — add it to your shell rc:"
+		   printf '      export PATH="%s/bin:$PATH"\n' "$prefix" >&2 ;;
+	esac
+	export PATH="$prefix/bin:$PATH"
+}
+
 # --------------------------------------------------------------- deploy -----
 
 backup_path() {
@@ -481,8 +524,9 @@ main() {
 	if [ "$INSTALL_LSP" -eq 1 ]; then
 		install_asm_lsp
 		install_pyright
+		install_web_tools
 	else
-		info "skipping language servers (--no-lsp)"
+		info "skipping language servers and Prettier (--no-lsp)"
 	fi
 
 	if ! nvim_version_ok; then
@@ -513,7 +557,8 @@ main() {
 	# install only shows up as "no completion" much later otherwise.
 	info "language servers"
 	local name
-	for name in clangd asm-lsp pyright-langserver; do
+	for name in clangd asm-lsp pyright-langserver typescript-language-server \
+		tailwindcss-language-server prettier; do
 		if have "$name"; then
 			ok "$name -> $(command -v "$name")"
 		else

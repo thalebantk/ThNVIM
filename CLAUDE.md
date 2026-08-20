@@ -47,6 +47,9 @@ it is a deliberate dependency bump, so commit or revert it consciously.
   to the `vim.lsp.enable({...})` list in `init.lua`.
 - `after/ftplugin/<ft>.lua` — per-language settings. Deliberately `after/`, so
   they are sourced after `$VIMRUNTIME/ftplugin/<ft>.vim` and win any conflict.
+- `lua/<name>.lua` — plain modules, not plugin specs. Only `webstyle.lua` so
+  far, shared by the four Next.js ftplugins. Do not put these in `lua/plugins/`;
+  lazy imports that directory and would read them as specs.
 - `tmux/tmux.conf`, `konsole/Moonfly.colorscheme` — terminal side, deployed by
   `install.sh`.
 
@@ -74,7 +77,20 @@ before `LspAttach`, and marks already drawn are not retracted.
 matchparen highlight (re-applied on `ColorScheme`, since loading a scheme resets
 highlights); `lua/plugins/matchup.lua` adds enclosing-pair highlighting and
 disables the built-in itself. `lua/plugins/pairs.lua` is auto-*closing* only,
-unrelated to highlighting.
+unrelated to highlighting. The same `init.lua` function also styles `MatchWord`,
+which is matchup's group for matched *words* and JSX tag pairs — a different
+group from `MatchParen`, and one moonfly ships with no background.
+
+**Treesitter language names are registered by hand.** `init.lua` maps
+`typescriptreact` → `tsx` and `javascriptreact` → `javascript`. Without that,
+`vim.treesitter.get_parser()` returns *nil* rather than erroring on those
+buffers, so anything treesitter-backed — ibl's scope highlighting and
+nvim-ts-autotag — silently does nothing there while working in C.
+nvim-treesitter would register these; this config does not use it. The parsers
+themselves live in `~/.local/share/nvim/site/parser/` and are *not* installed or
+managed by this repo, so both features can disappear if that directory is
+cleaned. Failure is silent in each case: `vim.treesitter.get_parser()` returns
+nil, and the feature simply stops.
 
 **Indent guides read `listchars`.** `lua/plugins/indent.lua` owns the guides;
 the ftplugins render tabs as plain blanks so nothing draws twice. The trap is
@@ -82,6 +98,30 @@ ibl's `indent.tab_char`, which *defaults to the `tab` value in `listchars`* — 
 leaving it implicit makes every tab-indented buffer (all the C and assembly
 ones) draw its guides in blanks and show nothing. It is set explicitly for that
 reason; changing `listchars` in an ftplugin is not as isolated as it looks.
+
+**Format on save is doubly gated, on purpose.** `lua/plugins/format.lua` runs
+Prettier, and it must never touch kernel C — reformatting would rewrite lines a
+patch never meant to include. Two things prevent that: `formatters_by_ft` lists
+only the four web filetypes (conform is a no-op for a filetype with no
+formatter), and `format_on_save` additionally returns `nil` unless the file sits
+in a Next.js tree, detected by `next.config.*` or a `next` dependency in
+`package.json` and cached per directory. Widening either one widens what gets
+rewritten on `:w`.
+
+**Two servers on a .tsx buffer, gated the same way.** `lsp/ts_ls.lua` and
+`lsp/tailwindcss.lua` both attach to TSX, and both use a `root_dir` *function*
+rather than `root_markers` — Neovim starts a server only once `on_dir` is
+called, so declining to call it is what leaves a buffer with no server. Both
+route through `lua/nextjs.lua`, and tailwindcss adds a second condition of its
+own (a `tailwind.config.*` or a `tailwindcss` dependency) so it does not start
+in a Next.js app that has no Tailwind. A buffer can therefore legitimately have
+two clients, one client, or none.
+
+**One formatter, not two.** `lsp/ts_ls.lua` switches
+`documentFormattingProvider` off in `on_attach` because the server formats
+differently from Prettier; leaving both on means the two overwrite each other
+depending on which finishes first. If Prettier is ever dropped, that override has
+to go too or TS/JS ends up with no formatter at all.
 
 **tmux navigation is two halves.** `lua/plugins/tmux.lua` binds `<C-hjkl>` in
 Neovim; `tmux/tmux.conf` needs the matching `is_vim` bindings or the keys stop
